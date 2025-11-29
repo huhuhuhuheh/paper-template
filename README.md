@@ -2,7 +2,7 @@
 
 Basic Paper Plugin generator with nothing apart from the files, no sort of bloat
 
-The files are generated with [IntelliJ IDEA](https://www.jetbrains.com/idea/download) using the [Minecraft Development](https://plugins.jetbrains.com/plugin/8327-minecraft-development) Plugin
+The files were generated with [IntelliJ IDEA](https://www.jetbrains.com/idea/download) using the [Minecraft Development](https://plugins.jetbrains.com/plugin/8327-minecraft-development) Plugin
 
 # To download:
 
