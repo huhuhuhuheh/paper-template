@@ -1,0 +1,79 @@
+name: Generate Paper Templates
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine Versions
+        id: calc
+        shell: bash
+        run: |
+          TAG=${{ github.ref_name }}
+          VER=$(echo $TAG | sed 's/^v//')
+          
+          JAVA_VER=8
+          if [[ $(echo -e "$VER\n1.20.5" | sort -V | head -n1) == "1.20.5" ]]; then
+            JAVA_VER=21
+          elif [[ $(echo -e "$VER\n1.18" | sort -V | head -n1) == "1.18" ]]; then
+            JAVA_VER=17
+          elif [[ $(echo -e "$VER\n1.17" | sort -V | head -n1) == "1.17" ]]; then
+            JAVA_VER=16
+          fi
+          
+          echo "JAVA_VERSION=$JAVA_VER" >> $GITHUB_ENV
+          echo "MC_VERSION=$VER" >> $GITHUB_ENV
+
+      - name: Update Build Files
+        run: |
+          sed -i "s/val targetJavaVersion = [0-9]*/val targetJavaVersion = ${{ env.JAVA_VERSION }}/" Kotlin/build.gradle.kts
+          sed -i "s/paper-api:[0-9.]*-R0.1-SNAPSHOT/paper-api:${{ env.MC_VERSION }}-R0.1-SNAPSHOT/" Kotlin/build.gradle.kts
+          sed -i "s/minecraftVersion(\"[0-9.]*\")/minecraftVersion(\"${{ env.MC_VERSION }}\")/" Kotlin/build.gradle.kts
+          
+          sed -i "s/def targetJavaVersion = [0-9]*/def targetJavaVersion = ${{ env.JAVA_VERSION }}/" Java/build.gradle
+          sed -i "s/paper-api:[0-9.]*-R0.1-SNAPSHOT/paper-api:${{ env.MC_VERSION }}-R0.1-SNAPSHOT/" Java/build.gradle
+          sed -i "s/minecraftVersion(\"[0-9.]*\")/minecraftVersion(\"${{ env.MC_VERSION }}\")/" Java/build.gradle
+
+      - name: Setup Java & Build
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Test Kotlin Build
+        run: cd Kotlin && chmod +x gradlew && ./gradlew build
+
+      - name: Test Java Build
+        run: cd Java && chmod +x gradlew && ./gradlew build
+
+      - name: Zip Templates
+        run: |
+          cd Java
+          zip -r ../paper-${{ env.MC_VERSION }}-Java.zip . -x "build/*" ".gradle/*"
+          cd ../Kotlin
+          zip -r ../paper-${{ env.MC_VERSION }}-Kotlin.zip . -x "build/*" ".gradle/*"
+
+      - name: Update Release Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            paper-${{ env.MC_VERSION }}-Java.zip
+            paper-${{ env.MC_VERSION }}-Kotlin.zip
+          body: |
+            ## Paper Template (${{ env.MC_VERSION }})
+            - **Game Version:** ${{ env.MC_VERSION }}
+            - **Java Version:** ${{ env.JAVA_VERSION }}
+            
+            🔗 [Minecraft Wiki](https://minecraft.wiki/w/Java_Edition_${{ env.MC_VERSION }})

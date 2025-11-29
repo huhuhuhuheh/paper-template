@@ -1,0 +1,18 @@
+# IntelliJ
+.idea/
+*.iml
+*.iws
+
+# Gradle & Build
+.gradle/
+build/
+gradle-app.setting
+.gradle-test-kit/
+
+# System
+.DS_Store
+Thumbs.db
+
+# Server run folders (generated when testing)
+run/
+server/
